@@ -54,8 +54,8 @@ contract TimeLockTest is Test {
         
         // 记录锁仓时间
         uint256 lockTime = block.timestamp;
-        console.log("锁仓时间:", lockTime);
-        console.log("解锁时间:", timeLock.unlockTime());
+        console.log("lock time:", lockTime);
+        console.log("unlock time:", timeLock.unlockTime());
         
         // 步骤2：尝试提取（应该失败，因为还没到 30 天）
         vm.expectRevert("Still locked! Wait until unlock time");
@@ -67,8 +67,8 @@ contract TimeLockTest is Test {
         uint256 futureTime = lockTime + 30 days + 1 seconds;  // 30 天 + 1 秒后
         vm.warp(futureTime);  // 🚀 时间跳跃！不用等 30 天！
         
-        console.log("跳跃后的时间:", block.timestamp);
-        console.log("解锁时间:", timeLock.unlockTime());
+        console.log("time after warp:", block.timestamp);
+        console.log("unlock time:", timeLock.unlockTime());
         
         // 步骤4：现在可以提取了！（因为时间已经过了 30 天）
         vm.prank(owner);
@@ -85,26 +85,26 @@ contract TimeLockTest is Test {
     function test_Warp_JumpToAnyTime() public {
         // 记录初始时间
         uint256 startTime = block.timestamp;
-        console.log("初始时间:", startTime);
+        console.log("start time:", startTime);
         
         // 跳跃到 1 小时后
         vm.warp(startTime + 1 hours);
-        console.log("1 小时后:", block.timestamp);
+        console.log("after 1 hour:", block.timestamp);
         assertEq(block.timestamp, startTime + 1 hours, "Should be 1 hour later");
         
         // 跳跃到 1 天后
         vm.warp(startTime + 1 days);
-        console.log("1 天后:", block.timestamp);
+        console.log("after 1 day:", block.timestamp);
         assertEq(block.timestamp, startTime + 1 days, "Should be 1 day later");
         
         // 跳跃到 1 年后
         vm.warp(startTime + 365 days);
-        console.log("1 年后:", block.timestamp);
+        console.log("after 1 year:", block.timestamp);
         assertEq(block.timestamp, startTime + 365 days, "Should be 1 year later");
         
         // 甚至可以跳到过去（虽然不常用）
         vm.warp(startTime - 1 days);
-        console.log("1 天前:", block.timestamp);
+        console.log("1 day before:", block.timestamp);
         assertEq(block.timestamp, startTime - 1 days, "Should be 1 day earlier");
     }
     
@@ -120,21 +120,21 @@ contract TimeLockTest is Test {
         
         // 记录初始区块号
         uint256 startBlock = block.number;
-        console.log("初始区块号:", startBlock);
+        console.log("start block:", startBlock);
         
         // 使用 vm.roll 跳到区块 1000
         vm.roll(1000);
-        console.log("跳跃后的区块号:", block.number);
+        console.log("block after roll:", block.number);
         assertEq(block.number, 1000, "Block number should be 1000");
         
         // 跳到区块 10000
         vm.roll(10000);
-        console.log("跳跃后的区块号:", block.number);
+        console.log("block after roll:", block.number);
         assertEq(block.number, 10000, "Block number should be 10000");
         
         // 跳到区块 999999
         vm.roll(999999);
-        console.log("跳跃后的区块号:", block.number);
+        console.log("block after roll:", block.number);
         assertEq(block.number, 999999, "Block number should be 999999");
     }
     
@@ -146,24 +146,24 @@ contract TimeLockTest is Test {
         uint256 startTime = block.timestamp;
         uint256 startBlock = block.number;
         
-        console.log("=== 初始状态 ===");
-        console.log("时间戳:", startTime);
-        console.log("区块号:", startBlock);
+        console.log("=== initial state ===");
+        console.log("timestamp:", startTime);
+        console.log("block number:", startBlock);
         
         // vm.warp 只改变时间，不改变区块号
         vm.warp(startTime + 1 days);
-        console.log("\n=== 使用 vm.warp(时间 + 1天) ===");
-        console.log("时间戳:", block.timestamp);  // ✅ 改变了
-        console.log("区块号:", block.number);      // ❌ 没改变
+        console.log("\n=== use vm.warp(time + 1 day) ===");
+        console.log("timestamp:", block.timestamp);  // changed
+        console.log("block number:", block.number);  // unchanged
         
         assertEq(block.timestamp, startTime + 1 days, "Time should change");
         assertEq(block.number, startBlock, "Block number should NOT change");
         
         // vm.roll 只改变区块号，不改变时间
         vm.roll(startBlock + 100);
-        console.log("\n=== 使用 vm.roll(区块号 + 100) ===");
-        console.log("时间戳:", block.timestamp);  // ❌ 没改变
-        console.log("区块号:", block.number);      // ✅ 改变了
+        console.log("\n=== use vm.roll(block + 100) ===");
+        console.log("timestamp:", block.timestamp);  // unchanged
+        console.log("block number:", block.number);  // changed
         
         assertEq(block.timestamp, startTime + 1 days, "Time should NOT change");
         assertEq(block.number, startBlock + 100, "Block number should change");
@@ -181,11 +181,11 @@ contract TimeLockTest is Test {
         uint256 lockTime = block.timestamp;
         uint256 unlockTime = timeLock.unlockTime();
         
-        console.log("=== 锁仓阶段 ===");
-        console.log("锁仓金额:", lockAmount);
-        console.log("锁仓时间:", lockTime);
-        console.log("解锁时间:", unlockTime);
-        console.log("还需要等待:", unlockTime - lockTime, "秒");
+        console.log("=== lock phase ===");
+        console.log("lock amount:", lockAmount);
+        console.log("lock time:", lockTime);
+        console.log("unlock time:", unlockTime);
+        console.log("need wait (seconds):", unlockTime - lockTime);
         
         // 验证：还不能提取
         assertEq(timeLock.canWithdraw(), false, "Should not be able to withdraw yet");
@@ -194,9 +194,9 @@ contract TimeLockTest is Test {
         // 不用真的等 30 天！直接 warp 过去！
         vm.warp(unlockTime + 1 seconds);  // 跳到解锁时间 + 1 秒
         
-        console.log("\n=== 30 天后（使用 warp）===");
-        console.log("当前时间:", block.timestamp);
-        console.log("解锁时间:", unlockTime);
+        console.log("\n=== 30 days later (warp) ===");
+        console.log("current time:", block.timestamp);
+        console.log("unlock time:", unlockTime);
         
         // 验证：现在可以提取了
         assertEq(timeLock.canWithdraw(), true, "Should be able to withdraw now");
@@ -207,10 +207,10 @@ contract TimeLockTest is Test {
         timeLock.withdraw();
         uint256 balanceAfter = address(owner).balance;
         
-        console.log("\n=== 提取成功 ===");
-        console.log("提取前余额:", balanceBefore);
-        console.log("提取后余额:", balanceAfter);
-        console.log("提取金额:", balanceAfter - balanceBefore);
+        console.log("\n=== withdraw success ===");
+        console.log("balance before:", balanceBefore);
+        console.log("balance after:", balanceAfter);
+        console.log("withdraw amount:", balanceAfter - balanceBefore);
         
         // 验证：提取成功
         assertEq(balanceAfter - balanceBefore, lockAmount, "Should withdraw locked amount");
