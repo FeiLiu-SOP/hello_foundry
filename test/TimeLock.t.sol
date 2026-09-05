@@ -10,13 +10,10 @@ import {TimeLock} from "../src/TimeLock.sol";
  */
 contract TimeLockTest is Test {
     TimeLock public timeLock;
-    address public owner = address(0x1);
-    
-    /**
-     * @notice 测试前的准备工作
-     */
+    address public owner;
+
     function setUp() public {
-        // 创建锁仓合约
+        owner = makeAddr("owner");
         timeLock = new TimeLock(owner);
         
         // 给测试合约一些 ETH，用于锁仓

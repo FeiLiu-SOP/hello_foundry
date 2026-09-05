@@ -1,66 +1,70 @@
-## Foundry
+# TimeLock Vault
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+基于 Foundry 的 ETH 时间锁金库：存入 ETH，到期后由 owner 提取。
 
-Foundry consists of:
+## 功能
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- `lock()`：默认锁仓 30 天
+- `lockFor(duration)`：自定义锁仓时长
+- `withdraw()`：仅 owner 在到期后可提取
+- 事件：`Locked`、`Withdrawn`
 
-## Documentation
+## Sepolia 部署（已验证）
 
-https://book.getfoundry.sh/
+| 项 | 值 |
+|----|-----|
+| 网络 | Sepolia (Chain ID: 11155111) |
+| 合约地址 | [`0x1E7693220b1eba6f73D9df606A20ff4a1aB02142`](https://sepolia.etherscan.io/address/0x1E7693220b1eba6f73D9df606A20ff4a1aB02142) |
+| Owner | `0xdBBb0437E38DFE967B8140AEe472281cFf7cB6E7` |
+| 源码 | Etherscan 已 Verify |
 
-## Usage
+## 本地开发
 
-### Build
+```bash
+# 编译
+forge build
 
-```shell
-$ forge build
+# 跑全部测试
+forge test
+
+# 看时间锁测试日志
+forge test --match-test test_Warp_TimeJump -vvv
 ```
 
-### Test
+## 部署到 Sepolia
 
-```shell
-$ forge test
+```bash
+# 1. 模拟（不花 Gas）
+forge script script/DeployTimeLock.s.sol \
+  --rpc-url https://ethereum-sepolia-rpc.publicnode.com
+
+# 2. 真部署
+forge script script/DeployTimeLock.s.sol \
+  --rpc-url https://ethereum-sepolia-rpc.publicnode.com \
+  --broadcast \
+  --private-key $PRIVATE_KEY
 ```
 
-### Format
+## 项目结构
 
-```shell
-$ forge fmt
+```text
+src/TimeLock.sol          核心合约
+test/TimeLock.t.sol       测试（含 vm.warp / prank / expectRevert）
+script/DeployTimeLock.s.sol  部署脚本
 ```
 
-### Gas Snapshots
+## 链下索引（项目 B）
 
-```shell
-$ forge snapshot
+Go 服务读取本合约 `Locked` 事件：[`../chain-indexer`](../chain-indexer)
+
+```bash
+cd ../chain-indexer
+go mod tidy
+go run .
 ```
 
-### Anvil
+## 技术栈
 
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```---
+- Solidity 0.8.x
+- Foundry (forge / cast)
+- Sepolia Testnet

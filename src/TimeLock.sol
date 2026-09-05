@@ -2,21 +2,16 @@
 pragma solidity ^0.8.13;
 
 /**
- * @title TimeLock - 一个简单的锁仓合约
- * @notice 演示时间相关的功能，用于学习 vm.warp 和 vm.roll
+ * @title TimeLock - 时间锁金库
+ * @notice 存入 ETH，到期后 owner 可提取；支持自定义锁仓时长
  */
 contract TimeLock {
-    // 锁仓的金额
     uint256 public lockedAmount;
-    
-    // 锁仓的到期时间（时间戳）
     uint256 public unlockTime;
-    
-    // 锁仓的用户地址
+    uint256 public lockDuration;
     address public owner;
-    
-    // 事件：记录锁仓和提取
-    event Locked(address indexed user, uint256 amount, uint256 unlockTime);
+
+    event Locked(address indexed user, uint256 amount, uint256 duration, uint256 unlockTime);
     event Withdrawn(address indexed user, uint256 amount);
     
     /**
@@ -27,22 +22,22 @@ contract TimeLock {
         owner = _owner;
     }
     
-    /**
-     * @notice 锁仓函数 - 锁定资金 30 天
-     * @dev 用户调用这个函数，资金会被锁定 30 天
-     */
+    /// @notice 锁仓 30 天（默认）
     function lock() external payable {
+        lockFor(30 days);
+    }
+
+    /// @notice 自定义锁仓时长，例如 7 days、30 days
+    function lockFor(uint256 duration) public payable {
         require(msg.value > 0, "Must send some ETH");
         require(lockedAmount == 0, "Already locked");
-        
-        // 记录锁仓金额
+        require(duration > 0, "Duration must be > 0");
+
         lockedAmount = msg.value;
-        
-        // 设置解锁时间：当前时间 + 30 天
-        // 30 天 = 30 * 24 * 60 * 60 = 2,592,000 秒
-        unlockTime = block.timestamp + 30 days;
-        
-        emit Locked(msg.sender, msg.value, unlockTime);
+        lockDuration = duration;
+        unlockTime = block.timestamp + duration;
+
+        emit Locked(msg.sender, msg.value, duration, unlockTime);
     }
     
     /**
@@ -57,9 +52,9 @@ contract TimeLock {
         // 记录要提取的金额
         uint256 amount = lockedAmount;
         
-        // 清零
         lockedAmount = 0;
         unlockTime = 0;
+        lockDuration = 0;
         
         // 转账给用户
         payable(owner).transfer(amount);
